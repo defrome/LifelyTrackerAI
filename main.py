@@ -9,7 +9,7 @@ from handlers.handlers import router
 from keyboard.kb_editor import main_menu_kb, log_indicators_kb
 from middlewares.middlewares import DatabaseMiddleware
 
-BOT_TOKEN='8124788304:AAGbT5IlXTC15WeuMz-1f2PgHeCq1oo5tEw'
+BOT_TOKEN=''
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
