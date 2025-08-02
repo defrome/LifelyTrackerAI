@@ -4,6 +4,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, CallbackQuery
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -116,6 +117,71 @@ async def process_weight(message: Message, state: FSMContext, session: AsyncSess
 
     except ValueError:
         await message.answer("❌ Пожалуйста, введите корректный вес (число от 30 до 300 кг).")
+
+
+def calculate_bmi(weight: float, height: float) -> float:
+    return weight / ((height / 100) ** 2)
+
+def calculate_waternorm(weight: float, height: float) -> float:
+    return weight * 0.03
+
+def calculate_ideal_weight(height: float) -> float:
+    return (height - 100) - ((height - 150) / 4)
+
+def get_bmi_status(bmi: float) -> str:
+    if bmi < 18.5:
+        return "Недостаточный вес"
+    elif 18.5 <= bmi < 25:
+        return "Нормальный вес"
+    elif 25 <= bmi < 30:
+        return "Избыточный вес"
+    else:
+        return "Ожирение"
+
+
+
+@router.callback_query(F.data == 'show_stats_profile')
+async def show_stats_profile(callback: CallbackQuery, session: AsyncSession):
+
+    user = await session.get(DBUser, callback.from_user.id)
+
+    if user is None or user.height is None or user.weight is None:
+        await callback.message.edit_text(
+            text="📊 Ваша статистика недоступна\n\n"
+                 "Для отображения статистики необходимо ввести ваш рост и вес",
+            reply_markup=InlineKeyboardBuilder()
+            .button(text="📏 Ввести данные", callback_data="ves_and_rost_ind")
+            .button(text="🔙 Назад", callback_data="back_to_main")
+            .adjust(1)
+            .as_markup()
+        )
+        return
+
+    bmi = calculate_bmi(user.weight, user.height)
+    water_norm = calculate_waternorm(user.weight, user.height)
+    ideal_weight = calculate_ideal_weight(user.height)
+    bmi_status = get_bmi_status(bmi)
+
+    message_text = (
+        f"📊 Ваша персональная статистика\n\n"
+        f"📏 Рост: {user.height} см\n"
+        f"⚖️ Вес: {user.weight} кг\n"
+        f"🧮 ИМТ: {bmi:.1f} ({get_bmi_status(bmi)})\n"
+        f"💧 Норма воды: {water_norm:.1f} л/день\n"
+        f"🎯 Идеальный вес: {ideal_weight:.1f} кг\n\n"
+    )
+
+    kb = InlineKeyboardBuilder()
+    kb.button(text="🔄 Обновить данные", callback_data="ves_and_rost_ind")
+    kb.button(text="🔙 Назад", callback_data="back_to_main")
+    kb.adjust(1)
+
+
+    await callback.message.edit_text(
+        text=message_text,
+        reply_markup=kb.as_markup()
+    )
+
 
 
 vectorizer = TfidfVectorizer()
