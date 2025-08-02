@@ -69,28 +69,27 @@ answers = [
     "Мозг на 75% состоит из воды. Для оптимальной работы ему нужно около 0,5 л в день (в общем объеме). При умственных нагрузках можно увеличить."
 ]
 
-# Создаем модель для поиска похожих вопросов
+
 vectorizer = TfidfVectorizer()
 question_vectors = vectorizer.fit_transform(questions)
 
 
 def get_answer(user_question):
-    # Преобразуем вопрос пользователя
+
     user_vector = vectorizer.transform([user_question])
 
-    # Находим наиболее похожий вопрос
+
     similarities = cosine_similarity(user_vector, question_vectors)
     most_similar_idx = np.argmax(similarities)
     similarity_score = similarities[0, most_similar_idx]
 
-    # Возвращаем ответ, если вопрос достаточно похож
+
     if similarity_score > 0.5:
         return answers[most_similar_idx]
     else:
         return "Извините, я не нашел точного ответа на ваш вопрос. Попробуйте переформулировать или задайте другой вопрос о воде."
 
 
-# Основной цикл работы бота
 print("Водный помощник: Задайте мне вопрос о потреблении воды (напишите 'выход' для завершения)")
 while True:
     user_input = input("\nВаш вопрос: ").strip()
