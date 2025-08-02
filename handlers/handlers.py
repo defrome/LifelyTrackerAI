@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.ai_main import questions, answers
 from database.models import DBUser
-from keyboard.kb_editor import main_menu_kb, log_indicators_kb, ai_back_kb
+from keyboard.kb_editor import main_menu_kb, log_indicators_kb, ai_back_kb, back_kb
 
 router = Router()
 
@@ -111,7 +111,8 @@ async def process_weight(message: Message, state: FSMContext, session: AsyncSess
             f"📏 Ваш рост: {height} см\n"
             f"⚖️ Ваш вес: {weight} кг\n"
             f"💧 Рекомендуемая норма воды: {water_norm} л/день\n\n"
-            f"Вы можете обновить данные в любое время."
+            f"Вы можете обновить данные в любое время.",
+            reply_markup=back_kb()
         )
         await state.clear()
 
