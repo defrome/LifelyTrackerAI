@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.ai_main import questions, answers
 from database.models import DBUser
-from keyboard.kb_editor import main_menu_kb, log_indicators_kb, ai_back_kb, back_kb
+from keyboard.kb_editor import main_menu_kb, log_indicators_kb, ai_back_kb, back_kb, ai_answ_back_kb
 
 router = Router()
 

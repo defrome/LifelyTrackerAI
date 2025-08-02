@@ -41,6 +41,14 @@ def ai_back_kb():
 
     return builder.as_markup()
 
+def ai_answ_back_kb():
+    builder = InlineKeyboardBuilder()
+
+    builder.button(
+        text="⬅️ Назад",
+        callback_data="ai_help"
+    )
+
 
 def back_kb():
     builder = InlineKeyboardBuilder()
