@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.ai_main import questions, answers
 from database.models import DBUser
-from keyboard.kb_editor import main_menu_kb, log_indicators_kb
+from keyboard.kb_editor import main_menu_kb, log_indicators_kb, ai_back_kb
 
 router = Router()
 
@@ -68,15 +68,15 @@ def get_answer(user_question: str) -> str:
         return f"Ошибка обработки вопроса: {str(e)}"
 
 
-@router.callback_query(lambda c: c.data == "ai_help")
+@router.callback_query(F.data == "ai_help")
 async def ai_help_callback(callback: types.CallbackQuery):
-    """Обработчик кнопки ai_help"""
-    await callback.message.answer(
+    await callback.message.edit_text(
         "🤖 Задайте любой вопрос о потреблении воды:\n"
         "Примеры:\n"
         "- Сколько воды нужно пить в день?\n"
         "- Как рассчитать норму по весу?\n"
-        "- Нужно ли больше воды при тренировках?"
+        "- Нужно ли больше воды при тренировках?",
+        reply_markup=ai_back_kb()
     )
     await callback.answer()
 
@@ -100,3 +100,50 @@ async def log_indicators(callback: CallbackQuery):
         text="Выберите показатель для записи:",
         reply_markup=log_indicators_kb()
     )
+
+
+@router.callback_query(F.data == "back_to_main")
+async def back_to_main_handler(callback: CallbackQuery, session: AsyncSession):
+    user = callback.from_user
+    username = user.username
+
+
+    db_user = await session.get(DBUser, user.id)
+
+    if not db_user:
+        new_user = DBUser(
+            id=user.id,
+            username=username
+        )
+        session.add(new_user)
+        await session.commit()
+    elif db_user.username != username:
+        db_user.username = username
+        await session.commit()
+
+    try:
+
+        await callback.message.edit_text(
+            text=f"""
+👋 Привет, @{username}!
+
+Я - твой персональный помощник для отслеживания здоровья. Со мной ты сможешь:
+
+• 📝 Записывать важные показатели (давление, пульс, температуру)
+• 📊 Анализировать статистику и прогресс
+• ⏰ Получать напоминания о приёме лекарств
+• 🏆 Формировать полезные привычки
+
+Давай начнём заботиться о твоём здоровье вместе! 
+
+Выбери действие в меню ниже 👇
+            """,
+            reply_markup=main_menu_kb()
+        )
+    except:
+        await callback.message.answer(
+            text=f"👋 Главное меню",
+            reply_markup=main_menu_kb()
+        )
+
+    await callback.answer()
