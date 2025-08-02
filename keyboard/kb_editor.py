@@ -23,5 +23,5 @@ def log_indicators_kb():
     builder.button(text="Записать весовые и ростовые показатели", callback_data="ves_and_rost_ind")
     builder.button(text="Помощь искусственного интелекта", callback_data="ai_help")
 
-    builder.adjust(1, 1, 1, 1)
+    builder.adjust(2, 1, 1)
     return builder.as_markup()
