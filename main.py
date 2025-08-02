@@ -1,6 +1,6 @@
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 import requests
 import asyncio
 
@@ -32,8 +32,15 @@ async def send_welcome(message: types.message):
 
 
 @dp.callback_query(F.data == "log_indicators")
-async def log_indicators(message: types.message):
-    await message.reply(f"Test", reply_markup=log_indicators_kb())
+async def log_indicators(callback: CallbackQuery):
+    # Сначала отвечаем на callback (убираем часики)
+    await callback.answer()
+
+    # Затем либо редактируем сообщение с клавиатурой:
+    await callback.message.edit_text(
+        text="Выберите показатель для записи:",
+        reply_markup=log_indicators_kb()
+    )
 
 
 async def main():
