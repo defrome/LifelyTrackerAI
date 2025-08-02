@@ -1,16 +1,20 @@
+import numpy as np
 from aiogram import Router, types, F
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
+from ai.ai_main import questions, answers
 from database.models import DBUser
 from keyboard.kb_editor import main_menu_kb, log_indicators_kb
 
 router = Router()
 
+
 @router.message(Command('start'))
-async def send_welcome(message: types.message, session: AsyncSession):
+async def send_welcome(message: types. Message, session: AsyncSession):
     user = message.from_user
     username = user.username
 
@@ -44,6 +48,46 @@ async def send_welcome(message: types.message, session: AsyncSession):
 
 Выбери действие в меню ниже 👇
     """, reply_markup=main_menu_kb())
+
+
+vectorizer = TfidfVectorizer()
+question_vectors = vectorizer.fit_transform(questions)
+
+
+def get_answer(user_question: str) -> str:
+    try:
+        user_vector = vectorizer.transform([user_question])
+        similarities = cosine_similarity(user_vector, question_vectors)
+        most_similar_idx = np.argmax(similarities)
+        similarity_score = similarities[0, most_similar_idx]
+
+        if similarity_score > 0.5:
+            return answers[most_similar_idx]
+        return "Не нашел точного ответа. Попробуйте переформулировать вопрос."
+    except Exception as e:
+        return f"Ошибка обработки вопроса: {str(e)}"
+
+
+@router.callback_query(lambda c: c.data == "ai_help")
+async def ai_help_callback(callback: types.CallbackQuery):
+    """Обработчик кнопки ai_help"""
+    await callback.message.answer(
+        "🤖 Задайте любой вопрос о потреблении воды:\n"
+        "Примеры:\n"
+        "- Сколько воды нужно пить в день?\n"
+        "- Как рассчитать норму по весу?\n"
+        "- Нужно ли больше воды при тренировках?"
+    )
+    await callback.answer()
+
+
+@router.message()
+async def handle_all_questions(message: types.Message):
+    if message.text.startswith('/'):
+        return
+
+    answer = get_answer(message.text)
+    await message.answer(answer)
 
 
 @router.callback_query(F.data == "log_indicators")

@@ -1,8 +1,3 @@
-import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-
-# Полные данные вопросов и ответов
 questions = [
     "Сколько воды нужно пить в день взрослому человеку?",
     "Какая норма воды в сутки для мужчины/женщины?",
@@ -68,39 +63,3 @@ answers = [
     "За 30 мин до еды - 1 стакан, во время - небольшими глотками, после - через 40-60 мин. Не разбавляйте желудочный сок сразу.",
     "Мозг на 75% состоит из воды. Для оптимальной работы ему нужно около 0,5 л в день (в общем объеме). При умственных нагрузках можно увеличить."
 ]
-
-
-vectorizer = TfidfVectorizer()
-question_vectors = vectorizer.fit_transform(questions)
-
-
-def get_answer(user_question):
-
-    user_vector = vectorizer.transform([user_question])
-
-
-    similarities = cosine_similarity(user_vector, question_vectors)
-    most_similar_idx = np.argmax(similarities)
-    similarity_score = similarities[0, most_similar_idx]
-
-
-    if similarity_score > 0.5:
-        return answers[most_similar_idx]
-    else:
-        return "Извините, я не нашел точного ответа на ваш вопрос. Попробуйте переформулировать или задайте другой вопрос о воде."
-
-
-print("Водный помощник: Задайте мне вопрос о потреблении воды (напишите 'выход' для завершения)")
-while True:
-    user_input = input("\nВаш вопрос: ").strip()
-
-    if user_input.lower() == 'выход':
-        print("До свидания! Пейте достаточно воды!")
-        break
-
-    if not user_input:
-        print("Пожалуйста, введите ваш вопрос.")
-        continue
-
-    response = get_answer(user_input)
-    print("\nОтвет:", response)
