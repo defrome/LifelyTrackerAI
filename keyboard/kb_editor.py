@@ -11,8 +11,8 @@ def main_menu_kb():
         text="📝 Записать показатели",
         callback_data="log_indicators"
     )
-    builder.button(text="📊 Статистика",
-                   callback_data="show_stats"
+    builder.button(text="📊 Статистика и профиль",
+                   callback_data="show_stats_profile"
     )
     builder.button(text="⚙️ Настройки",
                    callback_data="settings"
@@ -54,7 +54,7 @@ def log_indicators_kb():
         callback_data="eat_ind"
     )
     builder.button(
-        text="⚖️ Вес и рост",
+        text="⚖️ Записать вес и рост",
         callback_data="ves_and_rost_ind"
     )
     builder.button(

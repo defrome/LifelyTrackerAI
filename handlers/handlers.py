@@ -1,6 +1,8 @@
 import numpy as np
 from aiogram import Router, types, F
 from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, CallbackQuery
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -48,6 +50,72 @@ async def send_welcome(message: types. Message, session: AsyncSession):
 
 Выбери действие в меню ниже 👇
     """, reply_markup=main_menu_kb())
+
+
+class UserData(StatesGroup):
+    waiting_for_height = State()
+    waiting_for_weight = State()
+
+
+@router.callback_query(F.data == "ves_and_rost_ind")
+async def start_indicators_input(callback: CallbackQuery, state: FSMContext):
+    await callback.message.answer("📏 Введите ваш рост в сантиметрах:")
+    await state.set_state(UserData.waiting_for_height)
+    await callback.answer()
+
+
+@router.message(UserData.waiting_for_height)
+async def process_height(message: Message, state: FSMContext):
+    try:
+        height = int(message.text)
+        if not (100 <= height <= 250):
+            raise ValueError
+        await state.update_data(height=height)
+        await message.answer("⚖️ Теперь введите ваш вес в килограммах:")
+        await state.set_state(UserData.waiting_for_weight)
+    except ValueError:
+        await message.answer("❌ Пожалуйста, введите корректный рост (число от 100 до 250 см).")
+
+
+@router.message(UserData.waiting_for_weight)
+async def process_weight(message: Message, state: FSMContext, session: AsyncSession):
+    try:
+        weight = int(message.text)
+        if not (30 <= weight <= 300):
+            raise ValueError
+
+        data = await state.get_data()
+        height = data['height']
+
+
+        user = await session.get(DBUser, message.from_user.id)
+        if not user:
+            user = DBUser(
+                id=message.from_user.id,
+                username=message.from_user.username,
+                height=height,
+                weight=weight
+            )
+            session.add(user)
+        else:
+            user.height = height
+            user.weight = weight
+
+        await session.commit()
+
+        water_norm = round(weight * 0.03, 1)  # 30 мл на 1 кг
+
+        await message.answer(
+            f"✅ Данные сохранены!\n\n"
+            f"📏 Ваш рост: {height} см\n"
+            f"⚖️ Ваш вес: {weight} кг\n"
+            f"💧 Рекомендуемая норма воды: {water_norm} л/день\n\n"
+            f"Вы можете обновить данные в любое время."
+        )
+        await state.clear()
+
+    except ValueError:
+        await message.answer("❌ Пожалуйста, введите корректный вес (число от 30 до 300 кг).")
 
 
 vectorizer = TfidfVectorizer()
@@ -100,6 +168,7 @@ async def log_indicators(callback: CallbackQuery):
         text="Выберите показатель для записи:",
         reply_markup=log_indicators_kb()
     )
+
 
 
 @router.callback_query(F.data == "back_to_main")
